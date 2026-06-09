@@ -12,6 +12,7 @@
 [![Vue.js](https://img.shields.io/badge/Vue_3-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)](https://vuejs.org)
 [![Inertia.js](https://img.shields.io/badge/Inertia.js_3-9553E9?style=for-the-badge&logo=inertia&logoColor=white)](https://inertiajs.com)
 [![PrimeVue](https://img.shields.io/badge/PrimeVue_4-41B883?style=for-the-badge&logo=primevue&logoColor=white)](https://primevue.org)
+[![Laravel Reverb](https://img.shields.io/badge/Laravel_Reverb-WebSockets-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)](https://laravel.com/docs/reverb)
 
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
@@ -58,6 +59,8 @@ Ideal para:
 - ⏳ Escolher a validade dos links
 - 🚫 Revogar convites ativos
 - 💬 Participar dos chats
+- ⚡ Receber mensagens em tempo real
+- 🔔 Ver notificações de novos chats
 - 📧 Enviar avisos por e-mail
 - 🛡️ Gerenciar somente os próprios grupos
 
@@ -69,6 +72,8 @@ Ideal para:
 - 👀 Visualizar somente seus grupos
 - 🔗 Entrar por convite temporário
 - 💬 Conversar com a turma
+- ⚡ Receber mensagens em tempo real
+- 🔔 Abrir mensagens pelo toast
 - 😀 Escolher qualquer emoji como avatar
 - 🔎 Pesquisar emojis por categoria
 - 🎨 Alterar o perfil quando quiser
@@ -93,6 +98,7 @@ O projeto utiliza **PrimeVue** para entregar componentes acessíveis, consistent
 | `Message` | Alertas e informações importantes |
 | `Popover` | Seletor completo de emojis |
 | `Avatar` | Emojis dos participantes |
+| `Toast` | Notificações em tempo real com grupo, remetente e resumo |
 | `Tooltip` | Explicações rápidas das ações |
 
 O seletor de avatar suporta **todos os emojis Unicode disponíveis no dispositivo**, incluindo busca, categorias, bandeiras, favoritos, tons de pele e emojis compostos. 🌈
@@ -110,6 +116,9 @@ O seletor de avatar suporta **todos os emojis Unicode disponíveis no dispositiv
 | Autenticação | Laravel Fortify |
 | Banco padrão | SQLite |
 | E-mails | Laravel Mail |
+| Tempo real | Laravel Reverb, Laravel Echo e WebSockets |
+| Broadcasting | Canais privados por usuário |
+| Filas | Laravel Queue com driver de banco de dados |
 | Testes | Pest |
 | Qualidade | Laravel Pint, ESLint, Prettier e Vue TSC |
 
@@ -120,6 +129,9 @@ flowchart LR
     A["👑 Admin cria um grupo"] --> B["🔗 Compartilha convite temporário"]
     B --> C["🎓 Aluno entra no grupo"]
     C --> D["💬 Turma conversa no chat"]
+    D --> G["📥 Fila processa o broadcast"]
+    G --> H["⚡ Reverb envia por WebSocket"]
+    H --> I["🔔 Toast ou atualização do chat aberto"]
     A --> E["📧 Admin envia avisos"]
     E --> F["📨 Alunos recebem por e-mail"]
 ```
@@ -162,7 +174,24 @@ php artisan migrate --seed
 composer dev
 ```
 
-Pronto! Abra o endereço configurado em `APP_URL`. 🎉
+O comando inicia o Laravel, o worker da fila, o servidor Reverb e o Vite juntos. Pronto! Abra o endereço configurado em `APP_URL`. 🎉
+
+## ⚡ Mensagens em tempo real
+
+Cada mensagem salva dispara um evento `ShouldBroadcast`, processado pela fila e entregue pelo **Laravel Reverb**. O frontend usa **Laravel Echo** para ouvir um canal privado autenticado.
+
+- Somente o admin criador e os alunos participantes recebem a mensagem.
+- Se o grupo estiver aberto, o chat é atualizado diretamente.
+- Se outro grupo ou página estiver aberta, um `Toast` PrimeVue aparece no topo central.
+- O toast mostra o grupo, quem enviou, o avatar emoji e um resumo da mensagem.
+- A própria mensagem do usuário não gera notificação para ele.
+
+Em produção, mantenha estes processos ativos:
+
+```bash
+php artisan queue:work
+php artisan reverb:start
+```
 
 ## 🔑 Contas de demonstração
 
@@ -200,8 +229,6 @@ npm run build
 
 ## 🗺️ Ideias para o futuro
 
-- ⚡ Chat em tempo real com WebSockets
-- 🔔 Notificações dentro da plataforma
 - 📎 Envio de arquivos e imagens
 - 📱 Melhorias para dispositivos móveis
 - 📊 Painel com métricas dos grupos

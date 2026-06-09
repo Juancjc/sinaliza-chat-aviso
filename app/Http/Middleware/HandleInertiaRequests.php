@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -41,7 +42,33 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'sidebarGroups' => fn () => $this->sidebarGroups($request),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    /**
+     * @return Collection<int, array{id: int, nome: string}>
+     */
+    private function sidebarGroups(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return collect();
+        }
+
+        $groups = $user->isAdmin()
+            ? $user->gruposCriados()
+            : $user->gruposParticipando();
+
+        return $groups
+            ->select('grupos.id', 'grupos.nome')
+            ->orderBy('grupos.nome')
+            ->get()
+            ->map(fn ($group) => [
+                'id' => $group->id,
+                'nome' => $group->nome,
+            ]);
     }
 }

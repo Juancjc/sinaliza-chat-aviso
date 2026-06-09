@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, RefreshCw, Send, Users } from '@lucide/vue';
+import { ArrowLeft, Send, Users } from '@lucide/vue';
 import Button from 'primevue/button';
 import Card from 'primevue/card';
 import Textarea from 'primevue/textarea';
@@ -13,6 +13,7 @@ import {
     watch,
 } from 'vue';
 import InputError from '@/components/InputError.vue';
+import type { RealtimeMessage } from '@/types/realtime';
 
 type Mensagem = {
     id: number;
@@ -41,9 +42,7 @@ const page = usePage();
 const currentUser = computed(() => page.props.auth.user);
 const chatMessages = ref<Mensagem[]>([...props.mensagens]);
 const messagesBox = ref<HTMLElement | null>(null);
-const refreshing = ref(false);
 const form = useForm({ mensagem: '' });
-let pollTimer: ReturnType<typeof setInterval> | undefined;
 
 const scrollToBottom = async () => {
     await nextTick();
@@ -53,31 +52,27 @@ const scrollToBottom = async () => {
     }
 };
 
-const atualizarMensagens = async () => {
-    refreshing.value = true;
-
-    try {
-        const response = await fetch(`/grupos/${props.grupo.id}/mensagens`, {
-            headers: { Accept: 'application/json' },
-        });
-
-        if (response.ok) {
-            chatMessages.value = await response.json();
-            await scrollToBottom();
-        }
-    } finally {
-        refreshing.value = false;
-    }
-};
-
 const enviar = () => {
     form.post(`/grupos/${props.grupo.id}/mensagens`, {
         preserveScroll: true,
         onSuccess: () => {
             form.reset();
-            atualizarMensagens();
         },
     });
+};
+
+const receiveMessage = (event: Event) => {
+    const message = (event as CustomEvent<RealtimeMessage>).detail;
+
+    if (
+        message.grupo.id !== props.grupo.id ||
+        chatMessages.value.some(({ id }) => id === message.id)
+    ) {
+        return;
+    }
+
+    chatMessages.value.push(message);
+    scrollToBottom();
 };
 
 const formatarHorario = (date: string) =>
@@ -98,13 +93,11 @@ watch(
 
 onMounted(() => {
     scrollToBottom();
-    pollTimer = setInterval(atualizarMensagens, 10000);
+    window.addEventListener('chat:message', receiveMessage);
 });
 
 onBeforeUnmount(() => {
-    if (pollTimer) {
-        clearInterval(pollTimer);
-    }
+    window.removeEventListener('chat:message', receiveMessage);
 });
 </script>
 
@@ -143,15 +136,6 @@ onBeforeUnmount(() => {
                             </span>
                         </div>
                     </div>
-                    <Button
-                        label="Atualizar"
-                        severity="secondary"
-                        size="small"
-                        :loading="refreshing"
-                        @click="atualizarMensagens"
-                    >
-                        <template #icon><RefreshCw class="size-4" /></template>
-                    </Button>
                 </div>
             </template>
 

@@ -4,8 +4,12 @@ use App\Mail\AvisoGrupoMail;
 use App\Models\Grupo;
 use App\Models\GrupoConvite;
 use App\Models\User;
+use Illuminate\Broadcasting\BroadcastEvent;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
+use Inertia\Testing\AssertableInertia as Assert;
 
 uses(RefreshDatabase::class);
 
@@ -75,6 +79,58 @@ test('aluno acessa e envia mensagem somente no grupo em que participa', function
     $this->actingAs($outroAluno)
         ->post(route('grupos.mensagens.store', $grupo), ['mensagem' => 'Invasão'])
         ->assertForbidden();
+});
+
+test('mensagem é transmitida pela fila somente para membros e admin criador', function () {
+    Queue::fake();
+
+    $admin = User::factory()->admin()->create();
+    $participantes = User::factory()->aluno()->count(2)->create();
+    $naoParticipante = User::factory()->aluno()->create();
+    $grupo = $admin->gruposCriados()->create(['nome' => 'Grupo']);
+    $grupo->participantes()->attach($participantes, ['status' => 'ativo']);
+
+    $this->actingAs($participantes->first())
+        ->post(route('grupos.mensagens.store', $grupo), ['mensagem' => 'Mensagem em tempo real'])
+        ->assertRedirect();
+
+    Queue::assertPushed(BroadcastEvent::class, function (BroadcastEvent $job) use ($admin, $participantes, $naoParticipante) {
+        $event = $job->event;
+        $channels = collect($event->broadcastOn())->pluck('name')->sort()->values();
+        $expected = $participantes
+            ->pluck('id')
+            ->push($admin->id)
+            ->map(fn (int $id) => "private-users.{$id}")
+            ->sort()
+            ->values();
+
+        return $event instanceof ShouldBroadcast
+            && $channels->all() === $expected->all()
+            && ! $channels->contains("private-users.{$naoParticipante->id}");
+    });
+});
+
+test('sidebar lista somente grupos autorizados para cada perfil', function () {
+    $admin = User::factory()->admin()->create();
+    $outroAdmin = User::factory()->admin()->create();
+    $aluno = User::factory()->aluno()->create();
+    $grupoDoAdmin = $admin->gruposCriados()->create(['nome' => 'Grupo do admin']);
+    $outroAdmin->gruposCriados()->create(['nome' => 'Grupo do outro admin']);
+    $grupoDoAdmin->participantes()->attach($aluno, ['status' => 'ativo']);
+
+    $this->actingAs($admin)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('sidebarGroups', 1)
+            ->where('sidebarGroups.0.id', $grupoDoAdmin->id)
+        );
+
+    $this->actingAs($aluno)
+        ->get(route('dashboard'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('sidebarGroups', 1)
+            ->where('sidebarGroups.0.id', $grupoDoAdmin->id)
+        );
 });
 
 test('somente o admin criador pode adicionar alunos', function () {

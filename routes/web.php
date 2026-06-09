@@ -17,7 +17,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('grupos', GrupoController::class)->except(['index', 'show']);
 
     Route::get('grupos/{grupo}/chat', [ChatController::class, 'show'])->name('grupos.chat');
-    Route::get('grupos/{grupo}/mensagens', [ChatController::class, 'messages'])->name('grupos.mensagens.index');
     Route::post('grupos/{grupo}/mensagens', [ChatController::class, 'store'])->name('grupos.mensagens.store');
 
     Route::get('grupos/{grupo}/participantes', [GrupoParticipanteController::class, 'index'])->name('grupos.participantes');
