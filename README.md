@@ -197,7 +197,7 @@ O projeto inclui uma stack pronta para produção com:
 
 ### Deploy pelo link do Git no Portainer
 
-1. Publique as alterações na branch `master` ou `main`. O GitHub Actions criará `ghcr.io/juancjc/sinaliza-chat-avisoo:latest`.
+1. Publique as alterações na branch `master` ou `main`. O GitHub Actions criará `ghcr.io/juancjc/sinaliza-chat-aviso:latest`.
 2. Na primeira publicação, deixe o pacote `sinaliza-chat-aviso` público no GitHub Packages ou cadastre o GHCR como registry no Portainer.
 3. No Portainer, abra **Stacks → Add stack → Git repository**.
 4. Use o repositório `https://github.com/Juancjc/sinaliza-chat-aviso`.
@@ -210,6 +210,20 @@ A aplicação ficará disponível na porta `APP_PORT`, que por padrão é `8080`
 ```env
 APP_URL=https://chat.seudominio.com
 SESSION_SECURE_COOKIE=true
+```
+
+Se o deploy falhar com `error from registry: denied`, confirme primeiro que o workflow
+**Publicar imagem Docker** terminou com sucesso e criou a tag `latest`. Em seguida, escolha
+uma destas opções:
+
+- Deixe o pacote `sinaliza-chat-aviso` público nas configurações do GitHub Packages.
+- Cadastre `ghcr.io` no Portainer usando o usuário do GitHub e um token com permissão
+  `read:packages`, e selecione esse registry ao criar a stack.
+
+No servidor Docker, valide o acesso antes de refazer o deploy:
+
+```bash
+docker pull ghcr.io/juancjc/sinaliza-chat-aviso:latest
 ```
 
 O WebSocket usa automaticamente o mesmo domínio e protocolo aberto no navegador. O Nginx interno encaminha `/app` e `/apps` para o Reverb, portanto nenhuma porta pública adicional é necessária.
