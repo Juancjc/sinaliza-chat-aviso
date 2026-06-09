@@ -1,4 +1,7 @@
 import { createInertiaApp } from '@inertiajs/vue3';
+import Aura from '@primeuix/themes/aura';
+import PrimeVue from 'primevue/config';
+import Tooltip from 'primevue/tooltip';
 import { initializeTheme } from '@/composables/useAppearance';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
@@ -22,7 +25,15 @@ createInertiaApp({
         }
     },
     progress: {
-        color: '#4B5563',
+        color: '#2563EB',
+    },
+    withApp: (app) => {
+        app.use(PrimeVue, {
+            theme: {
+                preset: Aura,
+            },
+        });
+        app.directive('tooltip', Tooltip);
     },
 });
 
