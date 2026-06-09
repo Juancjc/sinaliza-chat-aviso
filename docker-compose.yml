@@ -2,7 +2,7 @@ name: chat-aviso
 
 services:
   app:
-    image: ${APP_IMAGE:-ghcr.io/juancjc/chat-aviso:latest}
+    image: ${APP_IMAGE:-ghcr.io/juancjc/sinaliza-chat-aviso:latest}
     restart: unless-stopped
     ports:
       - "${APP_PORT:-8080}:80"
