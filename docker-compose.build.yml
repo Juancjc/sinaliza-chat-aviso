@@ -1,0 +1,10 @@
+services:
+  app:
+    image: chat-aviso:local
+    environment:
+      REVERB_APP_KEY: ${REVERB_APP_KEY:-chat-aviso-key}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:-chat-aviso-key}

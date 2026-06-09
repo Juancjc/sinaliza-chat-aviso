@@ -1,0 +1,94 @@
+name: chat-aviso
+
+services:
+  app:
+    image: ${APP_IMAGE:-ghcr.io/juancjc/chat-aviso:latest}
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    environment:
+      APP_NAME: ${APP_NAME:-Chat Aviso}
+      APP_ENV: production
+      APP_KEY: ${APP_KEY:-}
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      APP_LOCALE: ${APP_LOCALE:-pt_BR}
+      APP_FALLBACK_LOCALE: ${APP_FALLBACK_LOCALE:-pt_BR}
+      LOG_CHANNEL: stderr
+      LOG_LEVEL: ${LOG_LEVEL:-warning}
+      DB_CONNECTION: pgsql
+      DB_HOST: database
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-chat_aviso}
+      DB_USERNAME: ${DB_USERNAME:-chat_aviso}
+      DB_PASSWORD: ${DB_PASSWORD:-chat-aviso-change-me}
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-false}
+      QUEUE_CONNECTION: redis
+      QUEUE_WORKERS: ${QUEUE_WORKERS:-2}
+      QUEUE_NAMES: ${QUEUE_NAMES:-default}
+      QUEUE_SLEEP: ${QUEUE_SLEEP:-1}
+      QUEUE_TRIES: ${QUEUE_TRIES:-3}
+      QUEUE_TIMEOUT: ${QUEUE_TIMEOUT:-120}
+      QUEUE_MAX_TIME: ${QUEUE_MAX_TIME:-3600}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      BROADCAST_CONNECTION: reverb
+      REVERB_APP_ID: chat-aviso
+      REVERB_APP_KEY: chat-aviso-key
+      REVERB_APP_SECRET: ${REVERB_APP_SECRET:-}
+      REVERB_HOST: 127.0.0.1
+      REVERB_PORT: 8080
+      REVERB_SCHEME: http
+      REVERB_SERVER_HOST: 0.0.0.0
+      REVERB_SERVER_PORT: 8080
+      MAIL_API_URL: ${MAIL_API_URL:-https://nest.juancjc.com.br/api-nest-central-jc/mail/send}
+      MAIL_API_KEY: ${MAIL_API_KEY:-}
+      MAIL_API_TOKEN: ${MAIL_API_TOKEN:-}
+      MAIL_API_TIMEOUT: ${MAIL_API_TIMEOUT:-15}
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1/up"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+
+  database:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-chat_aviso}
+      POSTGRES_USER: ${DB_USERNAME:-chat_aviso}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-chat-aviso-change-me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  app_storage:
+  postgres_data:
+  redis_data:

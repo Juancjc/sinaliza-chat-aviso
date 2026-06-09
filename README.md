@@ -18,6 +18,10 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Vite](https://img.shields.io/badge/Vite_8-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev)
 [![Pest](https://img.shields.io/badge/Testado_com_Pest-F59E0B?style=for-the-badge&logo=php&logoColor=white)](https://pestphp.com)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL_17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Redis](https://img.shields.io/badge/Redis-FF4438?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
+[![PM2](https://img.shields.io/badge/PM2-Runtime-2B037A?style=for-the-badge&logo=pm2&logoColor=white)](https://pm2.keymetrics.io)
 
 ![Status](https://img.shields.io/badge/status-em_melhoria_cont%C3%ADnua-blue?style=flat-square)
 ![Uso](https://img.shields.io/badge/uso-livre-brightgreen?style=flat-square)
@@ -118,10 +122,11 @@ O seletor de avatar suporta **todos os emojis Unicode disponíveis no dispositiv
 | Build | Vite 8 |
 | Autenticação | Laravel Fortify |
 | Banco padrão | SQLite |
-| E-mails | Laravel Mail |
+| E-mails | API central de e-mail |
 | Tempo real | Laravel Reverb, Laravel Echo e WebSockets |
 | Broadcasting | Canais privados por usuário |
-| Filas | Laravel Queue com driver de banco de dados |
+| Filas | Laravel Queue com Redis em produção |
+| Stack Docker | Nginx, PHP-FPM, PM2, PostgreSQL e Redis |
 | Testes | Pest |
 | Qualidade | Laravel Pint, ESLint, Prettier e Vue TSC |
 
@@ -179,6 +184,62 @@ composer dev
 
 O comando inicia o Laravel, o worker da fila, o servidor Reverb e o Vite juntos. Pronto! Abra o endereço configurado em `APP_URL`. 🎉
 
+## 🐳 Docker e Portainer
+
+O projeto inclui uma stack pronta para produção com:
+
+- **Nginx + PHP-FPM** servindo o Laravel.
+- **PM2 Runtime** supervisionando Nginx, PHP-FPM, workers da fila, scheduler e Reverb.
+- **Laravel Reverb** atrás do mesmo domínio e porta da aplicação.
+- **Redis** para filas, cache e sessões.
+- **PostgreSQL 17** com volume persistente.
+- Migrações, cache de produção e chaves internas preparados automaticamente ao iniciar.
+
+### Deploy pelo link do Git no Portainer
+
+1. Publique as alterações na branch `master` ou `main`. O GitHub Actions criará `ghcr.io/juancjc/chat-aviso:latest`.
+2. Na primeira publicação, deixe o pacote `chat-aviso` público no GitHub Packages ou cadastre o GHCR como registry no Portainer.
+3. No Portainer, abra **Stacks → Add stack → Git repository**.
+4. Use o repositório `https://github.com/Juancjc/chat-aviso`.
+5. Informe `docker-compose.yml` como caminho do Compose.
+6. Configure pelo menos `APP_URL` e `DB_PASSWORD`. O arquivo [`portainer.env.example`](portainer.env.example) contém todas as opções recomendadas.
+7. Clique em **Deploy the stack**.
+
+A aplicação ficará disponível na porta `APP_PORT`, que por padrão é `8080`. Para HTTPS, aponte seu proxy reverso para essa porta e defina:
+
+```env
+APP_URL=https://chat.seudominio.com
+SESSION_SECURE_COOKIE=true
+```
+
+O WebSocket usa automaticamente o mesmo domínio e protocolo aberto no navegador. O Nginx interno encaminha `/app` e `/apps` para o Reverb, portanto nenhuma porta pública adicional é necessária.
+
+> [!IMPORTANT]
+> A stack utiliza o volume `postgres_data`. Se uma versão anterior com MariaDB já possuir dados, faça a migração dos dados antes de remover o volume antigo; trocar a imagem do banco não converte os registros automaticamente.
+
+### Construir localmente
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
+
+### Processos gerenciados pelo PM2
+
+```text
+php-fpm    servidor PHP
+nginx      servidor HTTP e proxy WebSocket
+queue      workers Laravel configuráveis por QUEUE_WORKERS
+scheduler  php artisan schedule:work
+reverb     servidor WebSocket Laravel Reverb
+```
+
+Para inspecionar os processos:
+
+```bash
+docker exec -it chat-aviso-app-1 pm2 list
+docker logs -f chat-aviso-app-1
+```
+
 ## ⚡ Mensagens em tempo real
 
 Cada mensagem salva dispara um evento `ShouldBroadcast`, processado pela fila e entregue pelo **Laravel Reverb**. O frontend usa **Laravel Echo** para ouvir um canal privado autenticado.
@@ -207,15 +268,27 @@ php artisan reverb:start
 | 👑 Administrador | `admin@example.com` | `password` |
 | 🎓 Aluno | `ana@example.com` | `password` |
 
-## 📧 Configuração de e-mails
+## 📧 API de e-mails
 
-Por padrão, os avisos enviados são gravados no log:
+Os avisos são enviados usando a API configurada pelas variáveis:
 
-```text
-storage/logs/laravel.log
+```env
+MAIL_API_URL=https://nest.juancjc.com.br/api-nest-central-jc/mail/send
+MAIL_API_KEY=sua-chave
+MAIL_API_TOKEN=seu-token
 ```
 
-Para enviar e-mails reais, configure as variáveis `MAIL_*` no arquivo `.env` com os dados do seu serviço SMTP.
+A API recebe somente:
+
+```json
+{
+  "to": "destino@email.com",
+  "subject": "Assunto",
+  "body": "HTML renderizado pela Blade do aviso"
+}
+```
+
+O `ApiMailService` adiciona os headers `x-api-key` e `x-api-token` usando essas variáveis. O corpo visual do aviso fica em uma Blade e é enviado como HTML pronto.
 
 ## 🧪 Testes e qualidade
 

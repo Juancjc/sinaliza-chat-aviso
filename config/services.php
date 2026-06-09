@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'mail_api' => [
+        'url' => env('MAIL_API_URL', 'https://nest.juancjc.com.br/api-nest-central-jc/mail/send'),
+        'key' => env('MAIL_API_KEY'),
+        'token' => env('MAIL_API_TOKEN'),
+        'timeout' => env('MAIL_API_TIMEOUT', 15),
+    ],
+
 ];

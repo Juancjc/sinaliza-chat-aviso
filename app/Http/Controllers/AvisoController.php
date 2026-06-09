@@ -4,12 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Events\AvisoEnviado;
 use App\Http\Requests\StoreAvisoRequest;
-use App\Mail\AvisoGrupoMail;
 use App\Models\Grupo;
 use App\Notifications\AvisoNaoLido;
+use App\Services\ApiMailService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Mail;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,7 +23,7 @@ class AvisoController extends Controller
         ]);
     }
 
-    public function store(StoreAvisoRequest $request, Grupo $grupo): RedirectResponse
+    public function store(StoreAvisoRequest $request, Grupo $grupo, ApiMailService $mail): RedirectResponse
     {
         $aviso = $grupo->avisos()->create([
             ...$request->validated(),
@@ -38,7 +37,11 @@ class AvisoController extends Controller
 
         foreach ($alunos as $aluno) {
             $aluno->notify(new AvisoNaoLido($aviso));
-            Mail::to($aluno)->send(new AvisoGrupoMail($aviso));
+            $mail->send(
+                $aluno->email,
+                "[{$grupo->nome}] {$aviso->titulo}",
+                view('mail.aviso-grupo', compact('aviso', 'aluno'))->render(),
+            );
         }
 
         AvisoEnviado::dispatch($aviso, $alunos->pluck('id')->all());

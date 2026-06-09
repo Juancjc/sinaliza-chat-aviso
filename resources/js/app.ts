@@ -10,8 +10,18 @@ import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 
+const websocketIsSecure = window.location.protocol === 'https:';
+const websocketPort = Number(
+    window.location.port || (websocketIsSecure ? 443 : 80),
+);
+
 configureEcho({
     broadcaster: 'reverb',
+    wsHost: window.location.hostname,
+    wsPort: websocketPort,
+    wssPort: websocketPort,
+    forceTLS: websocketIsSecure,
+    enabledTransports: ['ws', 'wss'],
 });
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';

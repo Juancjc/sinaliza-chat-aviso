@@ -1,7 +1,6 @@
 <?php
 
 use App\Events\AvisoEnviado;
-use App\Mail\AvisoGrupoMail;
 use App\Models\Grupo;
 use App\Models\GrupoConvite;
 use App\Models\User;
@@ -10,7 +9,7 @@ use App\Notifications\MensagemNaoLida;
 use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -335,7 +334,8 @@ test('convite expirado não permite entrada e admin não pode aceitar convite', 
 });
 
 test('admin salva aviso e envia email aos alunos do grupo', function () {
-    Mail::fake();
+    Queue::fake();
+    Http::fake();
 
     $admin = User::factory()->admin()->create();
     $alunos = User::factory()->aluno()->count(2)->create();
@@ -351,12 +351,15 @@ test('admin salva aviso e envia email aos alunos do grupo', function () {
 
     expect($grupo->avisos()->count())->toBe(1);
 
-    Mail::assertSent(AvisoGrupoMail::class, 2);
+    Http::assertSentCount(2);
+    Http::assertSent(fn ($request) => $alunos->pluck('email')->contains($request['to'])
+        && $request['subject'] === '[Grupo] Aula alterada'
+        && str_contains($request['body'], 'A aula começará às 19h.'));
 });
 
 test('aviso notifica somente alunos e transmite atualização para eles', function () {
     Queue::fake();
-    Mail::fake();
+    Http::fake();
 
     $admin = User::factory()->admin()->create();
     $outroAdmin = User::factory()->admin()->create();
@@ -377,6 +380,8 @@ test('aviso notifica somente alunos e transmite atualização para eles', functi
     foreach ($alunos as $aluno) {
         expect($aluno->unreadNotifications()->where('type', AvisoNaoLido::class)->count())->toBe(1);
     }
+
+    Http::assertSentCount(2);
 
     Queue::assertPushed(BroadcastEvent::class, function (BroadcastEvent $job) use ($alunos) {
         if (! $job->event instanceof AvisoEnviado) {
