@@ -73,7 +73,8 @@ Ideal para:
 - 🔗 Entrar por convite temporário
 - 💬 Conversar com a turma
 - ⚡ Receber mensagens em tempo real
-- 🔔 Abrir mensagens pelo toast
+- 🔔 Acompanhar mensagens e avisos não lidos pelo sininho
+- 📢 Ler avisos importantes em modais sequenciais
 - 😀 Escolher qualquer emoji como avatar
 - 🔎 Pesquisar emojis por categoria
 - 🎨 Alterar o perfil quando quiser
@@ -99,6 +100,8 @@ O projeto utiliza **PrimeVue** para entregar componentes acessíveis, consistent
 | `Popover` | Seletor completo de emojis |
 | `Avatar` | Emojis dos participantes |
 | `Toast` | Notificações em tempo real com grupo, remetente e resumo |
+| `Popover` | Lista de mensagens e avisos não lidos no sininho |
+| `Dialog` | Leitura obrigatória e sequencial dos avisos |
 | `Tooltip` | Explicações rápidas das ações |
 
 O seletor de avatar suporta **todos os emojis Unicode disponíveis no dispositivo**, incluindo busca, categorias, bandeiras, favoritos, tons de pele e emojis compostos. 🌈
@@ -185,6 +188,10 @@ Cada mensagem salva dispara um evento `ShouldBroadcast`, processado pela fila e 
 - Se outro grupo ou página estiver aberta, um `Toast` PrimeVue aparece no topo central.
 - O toast mostra o grupo, quem enviou, o avatar emoji e um resumo da mensagem.
 - A própria mensagem do usuário não gera notificação para ele.
+- O sininho mantém mensagens e avisos não lidos persistidos no banco.
+- Abrir um chat marca as mensagens daquele grupo como lidas.
+- Alunos recebem avisos em modais sequenciais até confirmar a leitura de todos.
+- Administradores recebem mensagens não lidas, mas nunca recebem avisos.
 
 Em produção, mantenha estes processos ativos:
 

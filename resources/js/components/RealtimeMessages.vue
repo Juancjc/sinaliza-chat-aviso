@@ -31,9 +31,16 @@ const handleMessage = (message: RealtimeMessage) => {
                 detail: message,
             }),
         );
+        window.dispatchEvent(
+            new CustomEvent<number>('notifications:read-group', {
+                detail: message.grupo.id,
+            }),
+        );
 
         return;
     }
+
+    window.dispatchEvent(new Event('notifications:refresh'));
 
     toast.add({
         group: 'realtime-messages',

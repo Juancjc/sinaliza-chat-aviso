@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GrupoController;
 use App\Http\Controllers\GrupoConviteController;
 use App\Http\Controllers\GrupoParticipanteController;
+use App\Http\Controllers\NotificacaoController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'Welcome')->name('home');
@@ -18,6 +19,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('grupos/{grupo}/chat', [ChatController::class, 'show'])->name('grupos.chat');
     Route::post('grupos/{grupo}/mensagens', [ChatController::class, 'store'])->name('grupos.mensagens.store');
+    Route::patch('grupos/{grupo}/mensagens/ler', [NotificacaoController::class, 'readGroupMessages'])->name('grupos.mensagens.read');
+
+    Route::get('notificacoes/nao-lidas', [NotificacaoController::class, 'index'])->name('notificacoes.index');
+    Route::patch('notificacoes/{notificacao}/ler', [NotificacaoController::class, 'read'])->name('notificacoes.read');
 
     Route::get('grupos/{grupo}/participantes', [GrupoParticipanteController::class, 'index'])->name('grupos.participantes');
     Route::post('grupos/{grupo}/participantes', [GrupoParticipanteController::class, 'store'])->name('grupos.participantes.store');

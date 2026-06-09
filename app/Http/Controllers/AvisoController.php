@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\AvisoEnviado;
 use App\Http\Requests\StoreAvisoRequest;
 use App\Mail\AvisoGrupoMail;
 use App\Models\Grupo;
+use App\Notifications\AvisoNaoLido;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -35,8 +37,11 @@ class AvisoController extends Controller
             ->get();
 
         foreach ($alunos as $aluno) {
+            $aluno->notify(new AvisoNaoLido($aviso));
             Mail::to($aluno)->send(new AvisoGrupoMail($aviso));
         }
+
+        AvisoEnviado::dispatch($aviso, $alunos->pluck('id')->all());
 
         Inertia::flash('toast', [
             'type' => 'success',

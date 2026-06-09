@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\UnreadNotificationData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Inertia\Middleware;
@@ -43,6 +44,9 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarGroups' => fn () => $this->sidebarGroups($request),
+            'unreadNotifications' => fn () => $request->user()
+                ? UnreadNotificationData::for($request->user())
+                : [],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

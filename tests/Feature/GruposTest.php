@@ -1,9 +1,12 @@
 <?php
 
+use App\Events\AvisoEnviado;
 use App\Mail\AvisoGrupoMail;
 use App\Models\Grupo;
 use App\Models\GrupoConvite;
 use App\Models\User;
+use App\Notifications\AvisoNaoLido;
+use App\Notifications\MensagemNaoLida;
 use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -108,6 +111,66 @@ test('mensagem é transmitida pela fila somente para membros e admin criador', f
             && $channels->all() === $expected->all()
             && ! $channels->contains("private-users.{$naoParticipante->id}");
     });
+});
+
+test('mensagem cria notificações não lidas para membros e admin exceto remetente', function () {
+    $admin = User::factory()->admin()->create();
+    $remetente = User::factory()->aluno()->create();
+    $outroAluno = User::factory()->aluno()->create();
+    $naoParticipante = User::factory()->aluno()->create();
+    $grupo = $admin->gruposCriados()->create(['nome' => 'Grupo']);
+    $grupo->participantes()->attach([$remetente->id, $outroAluno->id], ['status' => 'ativo']);
+
+    $this->actingAs($remetente)
+        ->post(route('grupos.mensagens.store', $grupo), ['mensagem' => 'Nova mensagem'])
+        ->assertRedirect();
+
+    expect($admin->unreadNotifications()->where('type', MensagemNaoLida::class)->count())->toBe(1)
+        ->and($outroAluno->unreadNotifications()->where('type', MensagemNaoLida::class)->count())->toBe(1)
+        ->and($remetente->unreadNotifications()->count())->toBe(0)
+        ->and($naoParticipante->unreadNotifications()->count())->toBe(0);
+});
+
+test('abrir chat marca mensagens daquele grupo como lidas', function () {
+    $admin = User::factory()->admin()->create();
+    $aluno = User::factory()->aluno()->create();
+    $grupo = $admin->gruposCriados()->create(['nome' => 'Grupo']);
+    $grupo->participantes()->attach($aluno, ['status' => 'ativo']);
+    $mensagem = $grupo->mensagens()->create([
+        'user_id' => $admin->id,
+        'mensagem' => 'Leia ao abrir',
+    ]);
+    $aluno->notify(new MensagemNaoLida($mensagem));
+
+    $this->actingAs($aluno)
+        ->get(route('grupos.chat', $grupo))
+        ->assertOk();
+
+    expect($aluno->unreadNotifications()->count())->toBe(0)
+        ->and($aluno->readNotifications()->count())->toBe(1);
+});
+
+test('somente o dono pode marcar sua notificação como lida', function () {
+    $admin = User::factory()->admin()->create();
+    $aluno = User::factory()->aluno()->create();
+    $outroAluno = User::factory()->aluno()->create();
+    $grupo = $admin->gruposCriados()->create(['nome' => 'Grupo']);
+    $mensagem = $grupo->mensagens()->create([
+        'user_id' => $admin->id,
+        'mensagem' => 'Privada',
+    ]);
+    $aluno->notify(new MensagemNaoLida($mensagem));
+    $notificacao = $aluno->unreadNotifications()->first();
+
+    $this->actingAs($outroAluno)
+        ->patch(route('notificacoes.read', $notificacao))
+        ->assertNotFound();
+
+    $this->actingAs($aluno)
+        ->patch(route('notificacoes.read', $notificacao))
+        ->assertNoContent();
+
+    expect($notificacao->fresh()->read_at)->not->toBeNull();
 });
 
 test('sidebar lista somente grupos autorizados para cada perfil', function () {
@@ -289,4 +352,40 @@ test('admin salva aviso e envia email aos alunos do grupo', function () {
     expect($grupo->avisos()->count())->toBe(1);
 
     Mail::assertSent(AvisoGrupoMail::class, 2);
+});
+
+test('aviso notifica somente alunos e transmite atualização para eles', function () {
+    Queue::fake();
+    Mail::fake();
+
+    $admin = User::factory()->admin()->create();
+    $outroAdmin = User::factory()->admin()->create();
+    $alunos = User::factory()->aluno()->count(2)->create();
+    $grupo = $admin->gruposCriados()->create(['nome' => 'Grupo']);
+    $grupo->participantes()->attach($alunos, ['status' => 'ativo']);
+
+    $this->actingAs($admin)
+        ->post(route('grupos.avisos.store', $grupo), [
+            'titulo' => 'Aviso importante',
+            'mensagem' => 'Leitura obrigatória.',
+        ])
+        ->assertRedirect(route('dashboard'));
+
+    expect($admin->unreadNotifications()->count())->toBe(0)
+        ->and($outroAdmin->unreadNotifications()->count())->toBe(0);
+
+    foreach ($alunos as $aluno) {
+        expect($aluno->unreadNotifications()->where('type', AvisoNaoLido::class)->count())->toBe(1);
+    }
+
+    Queue::assertPushed(BroadcastEvent::class, function (BroadcastEvent $job) use ($alunos) {
+        if (! $job->event instanceof AvisoEnviado) {
+            return false;
+        }
+
+        $channels = collect($job->event->broadcastOn())->pluck('name')->sort()->values()->all();
+        $expected = $alunos->pluck('id')->map(fn (int $id) => "private-users.{$id}")->sort()->values()->all();
+
+        return $channels === $expected;
+    });
 });

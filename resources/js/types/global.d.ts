@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { UnreadNotification } from '@/types/notifications';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -19,6 +20,7 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarGroups: Array<{ id: number; nome: string }>;
+            unreadNotifications: UnreadNotification[];
             sidebarOpen: boolean;
             [key: string]: unknown;
         };
