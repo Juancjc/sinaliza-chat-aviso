@@ -1,6 +1,6 @@
 <div align="center">
 
-# 💬 Chat Aviso
+# 💬 Sinaliza - Chat Aviso
 
 ### Grupos, conversas e avisos importantes em um só lugar
 
