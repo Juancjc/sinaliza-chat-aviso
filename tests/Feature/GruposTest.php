@@ -29,6 +29,7 @@ test('admin pode criar e gerenciar seu grupo', function () {
     $grupo = Grupo::first();
 
     $response->assertRedirect(route('grupos.chat', $grupo, absolute: false));
+    expect($response->headers->get('Location'))->toBe("/grupos/{$grupo->id}/chat");
 
     expect($grupo)
         ->nome->toBe('Grupo de Teste')

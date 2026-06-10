@@ -31,6 +31,7 @@ test('new users can register', function () {
     $this->assertAuthenticated();
     $response->assertRedirect(route('dashboard', absolute: false));
     $response->assertInertiaFlash('toast.message', 'Conta criada com sucesso.');
+    expect($response->headers->get('Location'))->toBe('/dashboard');
     expect(auth()->user()->avatar_emoji)->toBe('👨🏿‍💻');
 });
 
