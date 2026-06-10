@@ -30,8 +30,6 @@ RUN apt-get update \
         pdo_sqlite \
         sockets \
         zip \
-    && (pecl install redis || pecl install redis || pecl install redis) \
-    && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=node-runtime /usr/local/ /usr/local/

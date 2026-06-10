@@ -1,5 +1,5 @@
-const queueWorkers = Math.max(Number.parseInt(process.env.QUEUE_WORKERS || '2', 10), 1);
-const queueConnection = process.env.QUEUE_CONNECTION || 'redis';
+const queueWorkers = Math.max(Number.parseInt(process.env.QUEUE_WORKERS || '1', 10), 1);
+const queueConnection = process.env.QUEUE_CONNECTION || 'database';
 const queueNames = process.env.QUEUE_NAMES || 'default';
 const queueSleep = process.env.QUEUE_SLEEP || '1';
 const queueTries = process.env.QUEUE_TRIES || '3';

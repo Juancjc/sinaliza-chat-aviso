@@ -5,13 +5,13 @@ services:
     image: ${APP_IMAGE:-ghcr.io/juancjc/sinaliza-chat-aviso:latest}
     restart: unless-stopped
     ports:
-      - "${APP_PORT:-8081}:80"
+      - "${APP_PORT:-5488}:80"
     environment:
       APP_NAME: ${APP_NAME:-Chat Aviso}
       APP_ENV: production
       APP_KEY: ${APP_KEY:-}
       APP_DEBUG: "false"
-      APP_URL: ${APP_URL:-http://localhost:8081}
+      APP_URL: ${APP_URL:-http://localhost:5488}
       APP_LOCALE: ${APP_LOCALE:-pt_BR}
       APP_FALLBACK_LOCALE: ${APP_FALLBACK_LOCALE:-pt_BR}
       LOG_CHANNEL: stderr
@@ -23,18 +23,16 @@ services:
       DB_USERNAME: ${DB_USERNAME:-chat_aviso}
       DB_PASSWORD: ${DB_PASSWORD:-chat_aviso}
       DB_SSLMODE: ${DB_SSLMODE:-prefer}
-      CACHE_STORE: redis
-      SESSION_DRIVER: redis
+      CACHE_STORE: database
+      SESSION_DRIVER: database
       SESSION_SECURE_COOKIE: ${SESSION_SECURE_COOKIE:-false}
-      QUEUE_CONNECTION: redis
-      QUEUE_WORKERS: ${QUEUE_WORKERS:-2}
+      QUEUE_CONNECTION: database
+      QUEUE_WORKERS: ${QUEUE_WORKERS:-1}
       QUEUE_NAMES: ${QUEUE_NAMES:-default}
       QUEUE_SLEEP: ${QUEUE_SLEEP:-1}
       QUEUE_TRIES: ${QUEUE_TRIES:-3}
       QUEUE_TIMEOUT: ${QUEUE_TIMEOUT:-120}
       QUEUE_MAX_TIME: ${QUEUE_MAX_TIME:-3600}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
       BROADCAST_CONNECTION: reverb
       REVERB_APP_ID: sinaliza-chat-aviso
       REVERB_APP_KEY: sinaliza-chat-aviso-key
@@ -50,9 +48,6 @@ services:
       MAIL_API_TIMEOUT: ${MAIL_API_TIMEOUT:-15}
     volumes:
       - app_storage:/var/www/html/storage
-    depends_on:
-      redis:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1/up"]
       interval: 30s
@@ -60,18 +55,5 @@ services:
       start_period: 60s
       retries: 3
 
-  redis:
-    image: redis:7.4-alpine
-    restart: unless-stopped
-    command: redis-server --appendonly yes
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
 volumes:
   app_storage:
-  redis_data:

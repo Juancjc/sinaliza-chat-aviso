@@ -64,28 +64,7 @@ wait_for_database() {
     done
 }
 
-wait_for_redis() {
-    attempts=0
-
-    until php -r '
-        $redis = new Redis();
-        $redis->connect(getenv("REDIS_HOST") ?: "redis", (int) (getenv("REDIS_PORT") ?: 6379), 2);
-        exit($redis->ping() ? 0 : 1);
-    ' > /dev/null 2>&1
-    do
-        attempts=$((attempts + 1))
-
-        if [ "$attempts" -ge 60 ]; then
-            echo "Redis indisponível após 60 tentativas."
-            exit 1
-        fi
-
-        sleep 2
-    done
-}
-
 wait_for_database
-wait_for_redis
 
 chown -R www-data:www-data storage bootstrap/cache
 

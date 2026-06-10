@@ -125,8 +125,8 @@ O seletor de avatar suporta **todos os emojis Unicode disponíveis no dispositiv
 | E-mails | API central de e-mail |
 | Tempo real | Laravel Reverb, Laravel Echo e WebSockets |
 | Broadcasting | Canais privados por usuário |
-| Filas | Laravel Queue com Redis em produção |
-| Stack Docker | Nginx, PHP-FPM, PM2, PostgreSQL e Redis |
+| Filas | Laravel Queue com banco de dados |
+| Stack Docker | Nginx, PHP-FPM, PM2, SQLite e Reverb |
 | Testes | Pest |
 | Qualidade | Laravel Pint, ESLint, Prettier e Vue TSC |
 
@@ -191,7 +191,7 @@ O projeto inclui uma stack pronta para produção com:
 - **Nginx + PHP-FPM** servindo o Laravel.
 - **PM2 Runtime** supervisionando Nginx, PHP-FPM, workers da fila, scheduler e Reverb.
 - **Laravel Reverb** atrás do mesmo domínio e porta da aplicação.
-- **Redis** para filas, cache e sessões.
+- **SQLite persistente** para banco, filas, cache e sessões por padrão.
 - **SQLite persistente** por padrão ou conexão com um **PostgreSQL existente** por variáveis de ambiente.
 - Migrações, cache de produção e chaves internas preparados automaticamente ao iniciar.
 
@@ -205,7 +205,7 @@ O projeto inclui uma stack pronta para produção com:
 6. Opcionalmente, configure `APP_URL`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD`. O arquivo [`portainer.env.example`](portainer.env.example) contém todas as opções recomendadas.
 7. Clique em **Deploy the stack**.
 
-A aplicação ficará disponível na porta `APP_PORT`, que por padrão é `8081`. Para HTTPS, aponte seu proxy reverso para essa porta e defina:
+A aplicação ficará disponível na porta `APP_PORT`, que por padrão é `5488`. Para HTTPS, aponte seu proxy reverso para essa porta e defina:
 
 ```env
 APP_URL=https://chat.seudominio.com
