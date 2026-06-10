@@ -58,6 +58,7 @@ const inputEmail = ref(props.email);
                     class="mt-1 block w-full"
                     autofocus
                     placeholder="Password"
+                    maxlength="9"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password" />
@@ -71,6 +72,7 @@ const inputEmail = ref(props.email);
                     autocomplete="new-password"
                     class="mt-1 block w-full"
                     placeholder="Confirm password"
+                    maxlength="9"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password_confirmation" />

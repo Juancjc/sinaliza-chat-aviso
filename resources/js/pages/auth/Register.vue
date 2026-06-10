@@ -85,6 +85,7 @@ const avatarEmoji = ref('🙂');
                     autocomplete="new-password"
                     name="password"
                     placeholder="Password"
+                    maxlength="9"
                     :passwordrules="passwordRules"
                 />
                 <p class="text-xs text-muted-foreground">
@@ -102,6 +103,7 @@ const avatarEmoji = ref('🙂');
                     autocomplete="new-password"
                     name="password_confirmation"
                     placeholder="Confirm password"
+                    maxlength="9"
                     :passwordrules="passwordRules"
                 />
                 <InputError :message="errors.password_confirmation" />

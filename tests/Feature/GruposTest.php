@@ -16,16 +16,19 @@ use Inertia\Testing\AssertableInertia as Assert;
 uses(RefreshDatabase::class);
 
 test('admin pode criar e gerenciar seu grupo', function () {
+    config(['app.url' => 'http://wrong-host']);
+
     $admin = User::factory()->admin()->create();
 
-    $this->actingAs($admin)
+    $response = $this->actingAs($admin)
         ->post(route('grupos.store'), [
             'nome' => 'Grupo de Teste',
             'descricao' => 'Descrição do grupo',
-        ])
-        ->assertRedirect();
+        ]);
 
     $grupo = Grupo::first();
+
+    $response->assertRedirect(route('grupos.chat', $grupo, absolute: false));
 
     expect($grupo)
         ->nome->toBe('Grupo de Teste')
@@ -36,7 +39,7 @@ test('admin pode criar e gerenciar seu grupo', function () {
             'nome' => 'Grupo Atualizado',
             'descricao' => null,
         ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('dashboard', absolute: false));
 });
 
 test('aluno não pode criar grupos', function () {
@@ -268,6 +271,11 @@ test('admin criador pode gerar link temporário e um novo link revoga o anterior
         ->and($primeiroConvite->isValid())->toBeTrue();
 
     $this->actingAs($admin)
+        ->get(route('grupos.participantes', $grupo))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('conviteAtivo.url', route('grupos.convites.show', $primeiroConvite, absolute: false)));
+
+    $this->actingAs($admin)
         ->post(route('grupos.convites.store', $grupo), ['duracao_horas' => 72])
         ->assertRedirect();
 
@@ -287,7 +295,7 @@ test('aluno pode entrar no grupo usando link temporário válido', function () {
 
     $this->get(route('grupos.convites.show', $convite))
         ->assertOk()
-        ->assertSessionHas('url.intended', route('grupos.convites.show', $convite));
+        ->assertSessionHas('url.intended', route('grupos.convites.show', $convite, absolute: false));
 
     $this->post(route('grupos.convites.accept', $convite))
         ->assertRedirect(route('login'));
@@ -295,13 +303,13 @@ test('aluno pode entrar no grupo usando link temporário válido', function () {
     $this->post(route('login.store'), [
         'email' => $aluno->email,
         'password' => 'password',
-    ])->assertRedirect(route('grupos.convites.show', $convite));
+    ])->assertRedirect(route('grupos.convites.show', $convite, absolute: false));
 
     $this->get(route('grupos.convites.show', $convite))
         ->assertOk();
 
     $this->post(route('grupos.convites.accept', $convite))
-        ->assertRedirect(route('grupos.chat', $grupo));
+        ->assertRedirect(route('grupos.chat', $grupo, absolute: false));
 
     expect($grupo->participantes()->whereKey($aluno->id)->exists())->toBeTrue();
 });
@@ -347,7 +355,7 @@ test('admin salva aviso e envia email aos alunos do grupo', function () {
             'titulo' => 'Aula alterada',
             'mensagem' => 'A aula começará às 19h.',
         ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('dashboard', absolute: false));
 
     expect($grupo->avisos()->count())->toBe(1);
 
@@ -372,7 +380,7 @@ test('aviso notifica somente alunos e transmite atualização para eles', functi
             'titulo' => 'Aviso importante',
             'mensagem' => 'Leitura obrigatória.',
         ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('dashboard', absolute: false));
 
     expect($admin->unreadNotifications()->count())->toBe(0)
         ->and($outroAdmin->unreadNotifications()->count())->toBe(0);

@@ -48,7 +48,7 @@ class GrupoConviteController extends Controller
     public function show(GrupoConvite $convite): Response
     {
         if (! request()->user()) {
-            session()->put('url.intended', route('grupos.convites.show', $convite));
+            session()->put('url.intended', route('grupos.convites.show', $convite, absolute: false));
         }
 
         $convite->load('grupo.admin:id,name');
@@ -75,6 +75,6 @@ class GrupoConviteController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Você entrou no grupo.']);
 
-        return to_route('grupos.chat', $convite->grupo);
+        return redirect(route('grupos.chat', $convite->grupo, absolute: false));
     }
 }

@@ -18,6 +18,8 @@ test('registration screen can be rendered', function () {
 });
 
 test('new users can register', function () {
+    config(['app.url' => 'http://wrong-host']);
+
     $response = $this->post(route('register.store'), [
         'name' => 'Test User',
         'email' => 'test@example.com',
@@ -29,6 +31,18 @@ test('new users can register', function () {
     $this->assertAuthenticated();
     $response->assertRedirect(route('dashboard', absolute: false));
     expect(auth()->user()->avatar_emoji)->toBe('👨🏿‍💻');
+});
+
+test('registration rejects passwords longer than nine characters', function () {
+    $this->post(route('register.store'), [
+        'name' => 'Test User',
+        'email' => 'test@example.com',
+        'avatar_emoji' => '🙂',
+        'password' => '1234567890',
+        'password_confirmation' => '1234567890',
+    ])->assertSessionHasErrors('password');
+
+    $this->assertGuest();
 });
 
 test('registration rejects text instead of emoji avatar', function () {

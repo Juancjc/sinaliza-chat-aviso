@@ -25,7 +25,7 @@ test('profile information can be updated', function () {
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('profile.edit'));
+        ->assertRedirect(route('profile.edit', absolute: false));
 
     $user->refresh();
 
@@ -48,7 +48,7 @@ test('email verification status is unchanged when the email address is unchanged
 
     $response
         ->assertSessionHasNoErrors()
-        ->assertRedirect(route('profile.edit'));
+        ->assertRedirect(route('profile.edit', absolute: false));
 
     expect($user->refresh()->email_verified_at)->not->toBeNull();
 });

@@ -22,7 +22,7 @@ class GrupoParticipanteController extends Controller
             'grupo' => $grupo->only('id', 'nome', 'descricao'),
             'conviteAtivo' => $conviteAtivo ? [
                 'token' => $conviteAtivo->token,
-                'url' => route('grupos.convites.show', $conviteAtivo),
+                'url' => route('grupos.convites.show', $conviteAtivo, absolute: false),
                 'expires_at' => $conviteAtivo->expires_at,
             ] : null,
             'participantes' => $grupo->participantes()

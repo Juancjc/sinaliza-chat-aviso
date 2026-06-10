@@ -18,7 +18,7 @@ import DataTable from 'primevue/datatable';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
 import Select from 'primevue/select';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 
 type Aluno = {
@@ -45,6 +45,15 @@ const props = defineProps<{
 const participanteForm = useForm<{ user_id: number | null }>({ user_id: null });
 const conviteForm = useForm({ duracao_horas: 24 });
 const copiado = ref(false);
+const conviteUrl = computed(() => {
+    if (!props.conviteAtivo) {
+        return '';
+    }
+
+    return typeof window === 'undefined'
+        ? props.conviteAtivo.url
+        : new URL(props.conviteAtivo.url, window.location.origin).toString();
+});
 const duracoes = [
     { label: '1 hora', value: 1 },
     { label: '24 horas', value: 24 },
@@ -69,7 +78,7 @@ const copiarConvite = async () => {
         return;
     }
 
-    await navigator.clipboard.writeText(props.conviteAtivo.url);
+    await navigator.clipboard.writeText(conviteUrl.value);
     copiado.value = true;
     window.setTimeout(() => {
         copiado.value = false;
@@ -136,7 +145,7 @@ const formatarExpiracao = (date: string) =>
 
                             <div v-if="conviteAtivo" class="flex gap-2">
                                 <InputText
-                                    :model-value="conviteAtivo.url"
+                                    :model-value="conviteUrl"
                                     readonly
                                     class="min-w-0 flex-1"
                                 />

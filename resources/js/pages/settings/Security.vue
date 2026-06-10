@@ -77,6 +77,7 @@ defineOptions({
                     class="mt-1 block w-full"
                     autocomplete="new-password"
                     placeholder="New password"
+                    maxlength="9"
                     :passwordrules="props.passwordRules"
                 />
                 <InputError :message="errors.password" />
@@ -90,6 +91,7 @@ defineOptions({
                     class="mt-1 block w-full"
                     autocomplete="new-password"
                     placeholder="Confirm password"
+                    maxlength="9"
                     :passwordrules="props.passwordRules"
                 />
                 <InputError :message="errors.password_confirmation" />

@@ -25,7 +25,7 @@ class GrupoController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Grupo criado com sucesso.']);
 
-        return to_route('grupos.chat', $grupo);
+        return redirect(route('grupos.chat', $grupo, absolute: false));
     }
 
     public function edit(Grupo $grupo): Response
@@ -43,7 +43,7 @@ class GrupoController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Grupo atualizado com sucesso.']);
 
-        return to_route('dashboard');
+        return redirect(route('dashboard', absolute: false));
     }
 
     public function destroy(Grupo $grupo): RedirectResponse
@@ -54,6 +54,6 @@ class GrupoController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => 'Grupo excluído com sucesso.']);
 
-        return to_route('dashboard');
+        return redirect(route('dashboard', absolute: false));
     }
 }
