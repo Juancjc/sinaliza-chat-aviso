@@ -68,8 +68,8 @@ wait_for_database
 
 chown -R www-data:www-data storage bootstrap/cache
 
-php artisan optimize:clear
 php artisan migrate --force
+php artisan optimize:clear
 php artisan storage:link || true
 php artisan config:cache
 php artisan route:cache
