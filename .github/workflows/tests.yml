@@ -42,6 +42,7 @@ jobs:
           mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
           cp .env.example .env
           php artisan key:generate
+          echo "http://localhost:5173" > public/hot
 
       - name: Run Tests
         run: php artisan test
